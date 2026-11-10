@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Keppnis- og æfingahraði</title>
+<style>
+:root{--bg:#f3f6f6;--card:#fff;--ink:#173337;--muted:#5a7074;--line:#d5e0e1;--brand:#006f70;--soft:#e3f1ef;--err:#aa3327}
+@media(prefers-color-scheme:dark){:root{--bg:#0e2024;--card:#172d32;--ink:#ecf5f5;--muted:#a9bfc1;--line:#34505a;--brand:#72d4c7;--soft:#1f3b3e;--err:#ffb4a9}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:980px;margin:auto;padding:28px 20px}
+h1{font-size:clamp(1.8rem,4vw,2.6rem);line-height:1.1;margin:0 0 6px}
+h2{font-size:1.2rem;margin:0 0 12px}
+.lead,.note{color:var(--muted)}
+.note{font-size:.85rem;margin:10px 0 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:18px}
+.inputs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;align-items:end}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+input,select{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+input[aria-invalid=true]{border-color:var(--err)}
+.vdot{text-align:center}
+.vdot b{display:block;font-size:2.4rem;line-height:1;color:var(--brand)}
+.vdot span{font-size:.8rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left}
+thead th{font-size:.78rem;color:var(--muted);font-weight:600}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+tbody th{font-weight:600}
+tbody th small{display:block;font-weight:400;color:var(--muted);font-size:.8rem}
+tr.hl{background:var(--soft)}
+.bar{width:28%;min-width:70px}
+.bar i{display:block;height:8px;border-radius:4px;background:var(--brand)}
+.err{color:var(--err)}
+.big{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:12px}
+footer{margin-top:24px;font-size:.85rem;color:var(--muted)}
+[hidden]{display:none!important}
+@media(max-width:640px){.grid2{grid-template-columns:1fr}.bar{display:none}}
+@media print{body{background:#fff;color:#000}.card{border-color:#999;break-inside:avoid}.no-print{display:none}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>Keppnis- og æfingahraði</h1>
+<p class="lead">Sláðu inn nýlegan keppnisárangur og fáðu æfingahraða, keppnisspá og púlsviðmið. Virkar án nets; engin gögn eru send eða vistuð.</p>
+</header>
+
+<section class="card" aria-labelledby="in-h">
+<h2 id="in-h">Þinn árangur</h2>
+<div class="inputs">
+  <div><label for="distance">Vegalengd</label><select id="distance"></select></div>
+  <div id="custom-field" hidden><label for="custom">Vegalengd (km)</label><input id="custom" inputmode="decimal"></div>
+  <div><label for="time">Lokatími (mm:ss eða klst:mm:ss)</label><input id="time" value="55:00"></div>
+  <div><label for="lthr">Þröskuldspúls (valfrjálst)</label><input id="lthr" inputmode="numeric" placeholder="slög/mín"></div>
+  <div class="vdot" id="vdot-box"><span>VDOT</span><b id="vdot">—</b></div>
+</div>
+<p class="note">Notaðu raunverulegan árangur, ekki markmið. Þekkirðu ekki þröskuldspúlsinn má nota meðalpúls úr 10 km keppni sem nálgun.</p>
+<p class="err" id="input-error" role="status" hidden>Athugaðu innslátt: tími á sniðinu mm:ss eða klst:mm:ss og vegalengd 0,1–200 km.</p>
+</section>
+
+<div id="results">
+<section class="card" aria-labelledby="tr-h">
+<h2 id="tr-h">Æfingahraðar</h2>
+<div class="scroll"><table>
+<thead><tr><th>Æfing</th><th class="n">mín/km</th><th class="n" id="hr-col">Púls</th><th class="bar" aria-hidden="true"></th></tr></thead>
+<tbody id="training"></tbody>
+</table></div>
+<p class="note">Raðað frá hægasta til hraðasta. Púls er hlutfall af þröskuldspúlsi og er viðmið, ekki markmið — í stuttum köflum skaltu ekki elta púlsinn.</p>
+</section>
+
+<section class="card" aria-labelledby="ws-h">
+<h2 id="ws-h">Tempó og vinnukaflar</h2>
+<div class="grid2">
+  <div class="scroll"><table>
+    <thead><tr><th>Tempólengd</th><th class="n">mín/km</th></tr></thead>
+    <tbody id="tempo"></tbody>
+  </table><p class="note">Lengra tempó er hlaupið aðeins hægar.</p></div>
+  <div class="scroll"><table>
+    <thead><tr><th>Kafli</th><th class="n">R</th><th class="n">I</th><th class="n">T</th><th class="n">5K</th><th class="n">10K</th></tr></thead>
+    <tbody id="splits"></tbody>
+  </table><p class="note">Tími á hvern kafla, án hvíldar.</p></div>
+</div>
+</section>
+
+<section class="card" aria-labelledby="rc-h">
+<h2 id="rc-h">Keppnisspá</h2>
+<div class="scroll"><table>
+<thead><tr><th>Vegalengd</th><th class="n">Tími</th><th class="n">mín/km</th></tr></thead>
+<tbody id="races"></tbody>
+</table></div>
+<div class="inputs" style="margin-top:14px">
+  <div><label for="target">Önnur vegalengd (km)</label><input id="target" inputmode="decimal" placeholder="t.d. 7,5"></div>
+  <div id="target-out" class="big" aria-live="polite"></div>
+</div>
+<p class="note">Spá með Riegel-formúlu; óvissan eykst þegar vegalengdin er langt frá innslættinum.</p>
+</section>
+
+<section class="card" aria-labelledby="hz-h">
+<h2 id="hz-h">Púlssvæði (Friel)</h2>
+<p class="note" id="zones-empty">Sláðu inn þröskuldspúls efst til að sjá púlssvæðin.</p>
+<div class="scroll" id="zones-wrap" hidden><table>
+<thead><tr><th>Svæði</th><th class="n">% af þröskuldspúlsi</th><th class="n">Slög/mín</th></tr></thead>
+<tbody id="zones"></tbody>
+</table></div>
+</section>
+
+<section class="card">
+<details>
+<summary>Álagsstig æfingar</summary>
+<div class="inputs">
+  <div><label for="load-min">Lengd vinnukafla (mín)</label><input id="load-min" inputmode="decimal"></div>
+  <div><label for="load-km">Vegalengd (km)</label><input id="load-km" inputmode="decimal"></div>
+  <div id="load-out" class="big" aria-live="polite"></div>
+</div>
+<p class="note" id="load-note">Daniels-álagsstig = mínútur × álagsstuðull, miðað við VDOT hér að ofan. Notaðu einn jafnan kafla, ekki meðaltal með hvíld.</p>
+</details>
+</section>
+</div>
+
+<footer>
+<details>
+<summary>Forsendur og stillingar</summary>
+<p>Byggt á Daniels Training Tables (Rev3.05.01, Herman Nieuwendaal). VDOT og æfingahraðar (E, T = 88%, I = 98% af VDOT, R = I − 15 sek/km) nota formúlur Daniels; M, hálfmaraþon, 5K, 10K og keppnisspá nota Riegel. Púlssvæði eftir Joe Friel. Engin leiðrétting fyrir hita, hæð eða undirlag.</p>
+<div style="max-width:220px"><label for="exponent">Riegel-stuðull (1,00–1,20)</label><input id="exponent" inputmode="decimal" value="1,06"></div>
+<p>Hærri stuðull spáir meiri hægingu á lengri vegalengdum. Sjálfgefið 1,06.</p>
+</details>
+<p>Hraðar eru nálgun, ekki fyrirmæli. Aðlagaðu að líðan og aðstæðum.</p>
+</footer>
+</main>
+
+<script>
+"use strict";
+const distances=[
+  {m:1500,label:'1.500 m'},{m:1609.344,label:'1 míla'},{m:3000,label:'3 km'},{m:5000,label:'5 km'},
+  {m:10000,label:'10 km'},{m:15000,label:'15 km'},{m:21097.5,label:'Hálfmaraþon'},{m:30000,label:'30 km'},{m:42195,label:'Maraþon'}];
+const anchors=[42195,21097.5,15000,12000,10000,8000,5000,3000,1609.344];
+const tempo=[[20,1],[30,1.022],[40,1.033],[50,1.043],[60,1.055]];
+const splits=[200,400,600,800,1000,1200,1600];
+// % of LTHR per pace (from the "Zone" sheet in Hlaup 2026-HK.xlsx)
+const paceHr={M:[90,94],HM:[94,98],T:[95,101],'10K':[97,103],'5K':[100,105]};
+const friel=[['Z1',null,.85],['Z2',.85,.89],['Z3',.90,.94],['Z4',.95,.99],['Z5a',1,1.02],['Z5b',1.03,1.06],['Z5c',1.06,null]];
+// Daniels intensity table: [fraction of VDOT, points per minute]
+const intensity=[[.5,.1],[.59,.1],[.595,.105],[.6,.11],[.605,.116],[.61,.122],[.615,.1285],[.62,.135],[.625,.1425],[.63,.15],[.635,.1585],[.64,.167],[.645,.175],[.65,.183],[.655,.1915],[.66,.2],[.665,.2085],[.67,.217],[.675,.225],[.68,.233],[.685,.2415],[.69,.25],[.7,.2665],[.71,.283],[.715,.2915],[.72,.3],[.725,.3085],[.73,.317],[.735,.325],[.74,.333],[.745,.3415],[.75,.35],[.755,.3585],[.76,.367],[.765,.3795],[.77,.392],[.775,.4045],[.78,.417],[.785,.4295],[.79,.442],[.795,.4545],[.8,.467],[.805,.4795],[.81,.492],[.815,.5045],[.82,.517],[.825,.5335],[.83,.55],[.835,.5665],[.84,.583],[.85,.6],[.86,.617],[.865,.6335],[.87,.65],[.875,.6665],[.88,.683],[.89,.703],[.9,.723],[.905,.743],[.91,.763],[.915,.7815],[.92,.8],[.925,.82],[.93,.84],[.935,.8615],[.94,.883],[.95,.9],[.96,.917],[.97,.9385],[.98,.96],[.99,.98],[1,1],[1.025,1.125],[1.05,1.25],[1.075,1.375],[1.1,1.5],[1.125,1.625],[1.15,1.75],[1.175,1.925],[1.2,2.1]];
+
+const $=id=>document.getElementById(id);
+const num=s=>s.trim()?Number(s.trim().replace(',','.')):NaN;
+const dec=(v,d=1)=>v.toFixed(d).replace('.',',');
+
+function parseTime(s){
+  const p=s.trim().split(':');
+  if(p.length<2||p.length>3||p.some(x=>!/^\d+$/.test(x)))return null;
+  const v=p.map(Number);
+  if(v.slice(1).some(n=>n>=60))return null;
+  const sec=p.length===3?v[0]*3600+v[1]*60+v[2]:v[0]*60+v[1];
+  return sec>0?sec:null;
+}
+function fmt(sec,hours=false){
+  const s=Math.round(sec),h=Math.floor(s/3600),m=Math.floor(s/60)%60,ss=String(s%60).padStart(2,'0');
+  return hours||h>0?`${h}:${String(m).padStart(2,'0')}:${ss}`:`${Math.floor(s/60)}:${ss}`;
+}
+const sustained=min=>0.8+0.1894393*Math.exp(-0.012778*min)+0.2989558*Math.exp(-0.1932605*min);
+const vo2=v=>-4.6+0.182258*v+0.000104*v*v;
+
+function calculate(meters,seconds,exp){
+  const min=seconds/60,vdot=vo2(meters/min)/sustained(min);
+  const base=f=>60000/(29.54+5.000663*vdot*f-0.007546*(vdot*f)**2);
+  const project=d=>seconds*(d/meters)**exp;
+  const racePace=d=>project(d)*1000/d;
+  const anchorData=anchors.map(d=>({f:sustained(project(d)/60),pace:racePace(d)}));
+  const corrected=f=>{
+    const ok=anchorData.filter(a=>a.f<=f),a=ok.length?ok[ok.length-1]:anchorData[0];
+    return base(f)*a.pace/base(a.f);
+  };
+  const T=base(.88),I=base(.98),R=I-15;
+  const paces=[
+    {code:'E',label:'Rólegt hlaup',pace:corrected(.63),fast:corrected(.70),note:'Þægilegt; hægt að spjalla'},
+    {code:'M',label:'Maraþonhraði',pace:racePace(42195)},
+    {code:'HM',label:'Hálfmaraþonhraði',pace:racePace(21097.5)},
+    {code:'T',label:'Þröskuldur',pace:T,note:'Um 20 mín tempó'},
+    {code:'10K',label:'10 km keppnishraði',pace:racePace(10000)},
+    {code:'5K',label:'5 km keppnishraði',pace:racePace(5000)},
+    {code:'I',label:'Millibil',pace:I,note:'Vinnukaflar 3–5 mín'},
+    {code:'R',label:'Endurtekningar',pace:R,note:'Stuttir, hraðir kaflar með góðri hvíld'},
+  ].sort((a,b)=>b.pace-a.pace);
+  return {vdot,project,paces,T,I,R,p5:racePace(5000),p10:racePace(10000)};
+}
+
+let res=null;
+function render(){
+  const custom=$('distance').value==='custom';
+  $('custom-field').hidden=!custom;
+  const meters=custom?num($('custom').value)*1000:Number($('distance').value);
+  const sec=parseTime($('time').value),exp=num($('exponent').value);
+  const okT=sec!==null,okD=meters>=100&&meters<=200000,okE=exp>=1&&exp<=1.2;
+  $('time').setAttribute('aria-invalid',!okT);$('custom').setAttribute('aria-invalid',custom&&!okD);$('exponent').setAttribute('aria-invalid',!okE);
+  const c=okT&&okD&&okE?calculate(meters,sec,exp):null;
+  res=c&&c.vdot>=10&&c.vdot<=100&&c.paces.every(p=>p.pace>0)?c:null;
+  $('results').hidden=!res;$('input-error').hidden=!!res;
+  $('vdot').textContent=res?dec(res.vdot):'—';
+  if(!res)return;
+
+  const lthr=num($('lthr').value),hasHr=lthr>0;
+  $('lthr').setAttribute('aria-invalid',$('lthr').value.trim()!==''&&!hasHr);
+  $('hr-col').hidden=!hasHr;
+  const fastest=Math.min(...res.paces.map(p=>p.pace));
+  $('training').innerHTML=res.paces.map(p=>{
+    const hr=paceHr[p.code];
+    const hrCell=hasHr?`<td class="n">${hr?`${Math.round(lthr*hr[0]/100)}–${Math.round(lthr*hr[1]/100)}`:'—'}</td>`:'';
+    return `<tr><th>${p.code} · ${p.label}${p.note?`<small>${p.note}</small>`:''}</th><td class="n">${p.fast?`${fmt(p.fast)}–`:''}${fmt(p.pace)}</td>${hrCell}<td class="bar" aria-hidden="true"><i style="width:${(fastest/p.pace*100).toFixed(1)}%"></i></td></tr>`;
+  }).join('');
+
+  $('tempo').innerHTML=tempo.map(([m,f])=>`<tr><th>${m} mín</th><td class="n">${fmt(res.T*f)}</td></tr>`).join('');
+  $('splits').innerHTML=splits.map(d=>`<tr><th>${d} m</th>${[res.R,res.I,res.T,res.p5,res.p10].map(p=>`<td class="n">${fmt(p*d/1000)}</td>`).join('')}</tr>`).join('');
+  $('races').innerHTML=distances.map(d=>`<tr${Math.abs(d.m-meters)<1?' class="hl"':''}><th>${d.label}</th><td class="n">${fmt(res.project(d.m),true)}</td><td class="n">${fmt(res.project(d.m)*1000/d.m)}</td></tr>`).join('');
+
+  $('zones-wrap').hidden=!hasHr;$('zones-empty').hidden=hasHr;
+  if(hasHr)$('zones').innerHTML=friel.map(([z,lo,hi])=>{
+    const pct=lo===null?`<${hi*100}%`:hi===null?`>${Math.round(lo*100)}%`:`${Math.round(lo*100)}–${Math.round(hi*100)}%`;
+    const bpm=lo===null?`<${Math.round(lthr*hi)}`:hi===null?`>${Math.round(lthr*lo)}`:`${Math.round(lthr*lo)}–${Math.round(lthr*hi)}`;
+    return `<tr><th>${z}</th><td class="n">${pct}</td><td class="n">${bpm}</td></tr>`;
+  }).join('');
+  renderTarget();renderLoad();
+}
+function renderTarget(){
+  const km=num($('target').value),ok=km>=.1&&km<=200,empty=!$('target').value.trim();
+  $('target').setAttribute('aria-invalid',!empty&&!ok);
+  $('target-out').textContent=empty||!res?'':ok?`${fmt(res.project(km*1000),true)}  ·  ${fmt(res.project(km*1000)/km)} /km`:'0,1–200 km';
+}
+function renderLoad(){
+  const min=num($('load-min').value),km=num($('load-km').value),out=$('load-out');
+  if(!res||!(min>0&&km>0)){out.textContent='';return;}
+  const f=vo2(km*1000/min)/res.vdot;
+  if(f<intensity[0][0]||f>intensity[intensity.length-1][0]){out.innerHTML='<span class="note">Utan töflusviðs (50–120% af VDOT)</span>';return;}
+  let k=0;for(const [key,v] of intensity)if(key<=f)k=v;
+  out.innerHTML=`${dec(min*k)} <span class="note">stig · ${dec(f*100,0)}% af VDOT</span>`;
+}
+
+$('distance').innerHTML=distances.map(d=>`<option value="${d.m}">${d.label}</option>`).join('')+'<option value="custom">Önnur vegalengd…</option>';
+$('distance').value='10000';
+['distance','custom','time','lthr','exponent'].forEach(id=>$(id).addEventListener('input',render));
+$('target').addEventListener('input',renderTarget);
+['load-min','load-km'].forEach(id=>$(id).addEventListener('input',renderLoad));
+render();
+</script>
+</body>
+</html>
